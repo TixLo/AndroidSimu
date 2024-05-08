@@ -4,9 +4,12 @@ from HW.CPU import CPU
 from Kernel.PowerTable import PowerTable
 
 class SchedPolicy(Basic):
-    def __init__(self, *args, cpus, **kwargs):
+    def __init__(self, *args, cpus, task_init_util, idle_prefer, cpu_dispatch_bypass, **kwargs):
         super().__init__(*args, **kwargs)
         self.cpus = cpus
+        self.task_init_util = task_init_util
+        self.idle_prefer = idle_prefer
+        self.cpu_dispatch_bypass = cpu_dispatch_bypass
         self.create_eas_power_table()
 
         for cpu in self.cpus:
@@ -32,13 +35,13 @@ class SchedPolicy(Basic):
         self.l_pwr_tbl.dump()
 
         self.m_pwr_tbl = PowerTable(self.env, 'MCPU Power Table')
-        self.m_pwr_tbl.append( 800, 220, 22000)
-        self.m_pwr_tbl.append(1200, 300, 25000)
-        self.m_pwr_tbl.append(1500, 380, 32000)
-        self.m_pwr_tbl.append(1800, 460, 37000)
-        self.m_pwr_tbl.append(2100, 540, 49000)
-        self.m_pwr_tbl.append(2500, 620, 63000)
-        self.m_pwr_tbl.append(2850, 700, 80000)
+        self.m_pwr_tbl.append( 800, 220, 24000)
+        self.m_pwr_tbl.append(1200, 300, 27000)
+        self.m_pwr_tbl.append(1500, 380, 34000)
+        self.m_pwr_tbl.append(1800, 460, 39000)
+        self.m_pwr_tbl.append(2100, 540, 51000)
+        self.m_pwr_tbl.append(2500, 620, 65000)
+        self.m_pwr_tbl.append(2850, 700, 82000)
         self.m_pwr_tbl.dump()
 
         self.b_pwr_tbl = PowerTable(self.env, 'BCPU Power Table')
@@ -52,4 +55,55 @@ class SchedPolicy(Basic):
         self.b_pwr_tbl.dump()
 
     def task_dispatch(self, task):
-        return task.cpu
+        if self.cpu_dispatch_bypass == True:
+            selected_cpu = task.cpu
+        else:
+            powers = {}
+
+            for c in range(len(self.cpus)):
+                powers[c] = 0
+                for cpu in self.cpus:
+                    util = cpu.util
+                    if c == cpu.index:
+                        util = self.task_init_util
+
+                    index, freq = cpu.pwr_tbl.get_freq(util, 0.8)
+                    ratio = (util / cpu.pwr_tbl.data[index]['cap'])
+                    expected_power = int(cpu.pwr_tbl.data[index]['power'] * ratio)
+                    # self.print('[%d] util: %d, init util: %d, cpu util: %d, cap: %d, ratio: %.2f' % (c, util, self.task_init_util, cpu.util, cpu.pwr_tbl.data[index]['cap'], ratio))
+                    # self.print('[%d] index: %d, freq: %d, expected power: %d' % (c, index, freq, expected_power))
+                    powers[c] += expected_power
+
+            #
+            # check all cpus are running?
+            #
+            all_running = True
+            for cpu in self.cpus:
+                if cpu.task == None:
+                    all_running = False
+                    break
+
+            #
+            # selection rules:
+            # 1. choose the most efficiency CPU if idle_prefer = False
+            # 2. choose the efficiency and idle CPU if idle_prefer = True
+            # 3. choose the most efficiency CPU if idle_prefer = False and all cpu are running
+            #
+            selected_cpu = -1
+            sorted_powers = sorted(powers.items(), key=lambda x:x[1])
+            for index, power in sorted_powers:
+                # self.print('CPU%d, power: %d' % (index, power))
+                if self.idle_prefer == False or all_running:
+                    selected_cpu = index
+                    break
+                else:
+                    for cpu in self.cpus:
+                        if cpu.task == None:
+                            selected_cpu = cpu.index
+                            break
+                    if selected_cpu != -1:
+                        break
+                            
+        # self.print('selected_cpu: %d, idle_prefer: %d, bypass: %d' % (selected_cpu, self.idle_prefer, self.cpu_dispatch_bypass))
+        # input()
+        return selected_cpu

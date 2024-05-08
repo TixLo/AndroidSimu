@@ -18,7 +18,7 @@ tasks_data = [
     ,
     {
         'id': 2,
-        'name': 'C',
+        'name': 'B',
         'pid': 112,
         'tgid': 222,
         'cpu': 1,
@@ -41,7 +41,7 @@ tasks_data = [
 def create_hw_configs():
     configs = {
         'android': {
-            'executor_console': False
+            'executor_console': True 
         },
         'sched': {
             'cpus': [
@@ -50,6 +50,8 @@ def create_hw_configs():
                 { 'max_freq': 3200, 'ipc': 1.6, 'cluster': 2}
             ],
             'pelt-n': 32,
+            'cpu_dispatch_bypass': False,
+            'idle_prefer': False,
             'task_init_util': 128
         }
     }

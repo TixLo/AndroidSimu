@@ -109,7 +109,7 @@ class CPU(Basic):
         self.util = new_util
 
         # get CPU frequency in according to power_table
-        freq = self.pwr_tbl.get_freq(self.util, 0.8)
+        index, freq = self.pwr_tbl.get_freq(self.util, 0.8)
         # self.print('new util: %d, req: %d' % (self.util, freq))
         self.cpufreq.set_freq(self.index, freq)
         # input()

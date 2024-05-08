@@ -11,6 +11,9 @@ class Sched(Basic):
         self.cpus = []
         self.pelt_n = cfg['pelt-n']
         self.cpufreq = None
+        self.task_init_util = cfg['task_init_util']
+        self.idle_prefer = cfg['idle_prefer']
+        self.cpu_dispatch_bypass = cfg['cpu_dispatch_bypass']
 
         self.enable_debug()
 
@@ -23,10 +26,12 @@ class Sched(Basic):
                 cpu.decay_y = 0.95760328
             elif self.pelt_n == 8:
                 cpu.decay_y = 0.91700404
-            cpu.task_init_util = cfg['task_init_util']
+            cpu.task_init_util = self.task_init_util
             self.cpus.append(cpu)
         
-        self.policy = SchedPolicy(self.env, 'BypassPolicy', cpus=self.cpus)
+        self.policy = SchedPolicy(self.env, 'TinyEASPolicy', \
+            cpus=self.cpus, task_init_util=self.task_init_util, idle_prefer=self.idle_prefer, \
+            cpu_dispatch_bypass=self.cpu_dispatch_bypass)
 
     def dump(self):
         self.print('total CPUs :', len(self.cpus))

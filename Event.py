@@ -31,7 +31,6 @@ class CpuFreqEvent:
     def __init__(self, timestamp, freqs):
         self.timestamp = timestamp
         self.freqs = freqs
-       
 
 
         
