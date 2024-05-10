@@ -18,12 +18,13 @@ class Executor(Basic):
         self.trace = Trace(self.env, 'Trace')
         self.evt_loop_proc = self.env.process(self.evt_loop())
         self.cpufreq = CpuFreq(self.env, 'CpuFreq', evt=self.evt)
+        self.final_countdown = 20
 
         self.console = None
         if enable_console == True:
             self.console = Console()
-        else:
-            self.enable_debug()
+        # else:
+        #     self.enable_debug()
 
     def set_sched(self, sched):
         self.sched = sched
@@ -40,10 +41,40 @@ class Executor(Basic):
         for d in self.task_json:
             yield Task.import_from_json(d)
 
+    def is_finished(self):
+        completed_count = 0
+        input_task_count = len(self.task_json)
+        all_cpu_empty = True
+
+        for c in self.sched.cpus:
+            completed_count += len(c.completed_tasks)
+            if c.is_empty() == False:
+                all_cpu_empty = False
+            # print('C%d, completed:%d, input_task_count: %d, all_cpu_empty: %d' % (c.index, completed_count, input_task_count, all_cpu_empty))
+
+        remaining_tasks = input_task_count - completed_count
+        if remaining_tasks == 0 and all_cpu_empty == True:
+            return True
+        else:
+            return False
+
     def run(self, until):
         try:
-            while self.env.peek() < until:
-                self.env.step()
+            if until > 0:
+                while self.env.peek() < until:
+                    self.env.step()
+            else:
+                while True:
+                    finish = False
+                    self.env.peek()
+                    self.env.step()
+                    if self.is_finished() == True:
+                        self.final_countdown -= 1
+                        if self.final_countdown == 0:
+                            finish = True
+                    if finish == True:
+                        break
+
         except KeyboardInterrupt:
             print('Ctrl-C to stop')
 
@@ -136,6 +167,8 @@ class Executor(Basic):
             self.console.tick_evts['vsync-sf'] = data.timestamp * 1000 # convert to ms
 
     def task_completed_callback(self, task):
+        self.print('tasl_completed_callback')
+        task.dump()
         self.trace.inject(task)
 
     def cpu_freq_change_callback(self, timestamp, freqs):
