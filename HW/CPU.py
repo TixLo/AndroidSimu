@@ -21,25 +21,33 @@ class CPU(Basic):
         self.completed_tasks = []
         self.consumed_workload = 0
         self.util = 0
-        self.task_init_util = 0
         self.decay_y = 0
         self.decay_ts = 0
         self.consuming_time = 0
         self.cluster = cfg['cluster']
         self.pwr_tbl = None
         self.cpufreq = None
+        self.off = False
+        self.fixed_freq = -1
+        self.fixed_freq_launch_event = False
 
         self.enable_debug()
 
     def dump(self):
-        self.print('[%d]CPU%d, freq: %d MHz, max_freq: %d MHz, ipc: %.2f, util: %d, y: %.6f' % 
-            (self.cluster, self.index, self.freq, self.max_freq, self.ipc, self.util, self.decay_y))
+        self.print('[%d]CPU%d, freq: %d MHz, max_freq: %d MHz, ipc: %.2f, util: %d, y: %.6f, off: %d' % 
+            (self.cluster, self.index, self.freq, self.max_freq, self.ipc, self.util, self.decay_y, self.off))
+
+    def is_empty(self):
+        if len(self.runnable) == 0 and self.task == None:
+            return True
+        else:
+            return False
 
     def inject_task(self, curr_time, task):
         task.rt_inject_ts = curr_time
-        # self.util = self.task_init_util
         if self.task == None:
             self.task = task
+            self.task.rt_cpu = self.index
             self.task.rt_b_ts = curr_time
         else:
             self.runnable.append(task)
@@ -58,6 +66,7 @@ class CPU(Basic):
 
                 self.task = self.runnable.pop(0)
                 self.task.rt_b_ts = task_end_ts
+                self.task.rt_cpu = self.index
                 # self.task.dump()
                 task_end_ts, remaining_time = self.consume_workload(task_end_ts, remaining_time, self.task)
                 # print('task_end_ts: %.6f, remaining_time: %.6f' % (task_end_ts, remaining_time))
@@ -66,7 +75,10 @@ class CPU(Basic):
                     return
 
     def consume_workload(self, curr_time, delta_time, task):
-        self.consumed_workload = delta_time * self.freq * 1000000 * self.ipc
+        if self.fixed_freq == -1:
+            self.consumed_workload = delta_time * self.freq * 1000000 * self.ipc
+        else:
+            self.consumed_workload = delta_time * self.fixed_freq * 1000000 * self.ipc
         # print('delta_time: %.6f, self.freq: %d, self.ipc: %.2f, consumed_workload: %d' % (delta_time, self.freq, self.ipc, self.consumed_workload))
         # task.dump()
 
@@ -108,10 +120,14 @@ class CPU(Basic):
         # self.print('new_util: %d, old_util:%d' % (new_util, self.util))
         self.util = new_util
 
-        # get CPU frequency in according to power_table
-        index, freq = self.pwr_tbl.get_freq(self.util, 0.8)
-        # self.print('new util: %d, req: %d' % (self.util, freq))
-        self.cpufreq.set_freq(self.index, freq)
+        if self.fixed_freq == -1:
+            # get CPU frequency in according to power_table
+            index, freq = self.pwr_tbl.get_freq(self.util, 0.8)
+            # self.print('new util: %d, req: %d' % (self.util, freq))
+            self.cpufreq.set_freq(self.index, freq)
+        elif self.fixed_freq_launch_event == False:
+            self.cpufreq.set_freq(self.index, self.fixed_freq)
+            self.fixed_freq_launch_event = True
         # input()
 
     def change_freq(self, new_freq):

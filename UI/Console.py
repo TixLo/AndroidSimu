@@ -93,7 +93,11 @@ class Console:
     def draw_cpus_info(self):
         for i in range(len(self.cpus)):
             c = self.cpus[i]
-            info = 'CPU%d' % c.index
+            if c.off == False:
+                info = 'CPU%d' % c.index
+            else:
+                info = '[%sOFF%s]CPU%d' % (self.RED, self.RESET, c.index)
+
             info += ', util: %s%d%s' % (self.YELLOW, c.util, self.RESET)
             if c.task != None:
                 info += ', task: %s%s%s' % (self.YELLOW, c.task.name, self.RESET)

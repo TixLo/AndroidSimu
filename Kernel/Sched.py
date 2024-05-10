@@ -27,7 +27,11 @@ class Sched(Basic):
             elif self.pelt_n == 8:
                 cpu.decay_y = 0.91700404
             cpu.task_init_util = self.task_init_util
+            cpu.fixed_freq = self.cfg['cpu_fixed_freq'][i]
             self.cpus.append(cpu)
+
+        for i in cfg['cpu_off']:
+            self.cpus[i].off = True
         
         self.policy = SchedPolicy(self.env, 'TinyEASPolicy', \
             cpus=self.cpus, task_init_util=self.task_init_util, idle_prefer=self.idle_prefer, \

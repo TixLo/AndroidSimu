@@ -62,17 +62,23 @@ class SchedPolicy(Basic):
 
             for c in range(len(self.cpus)):
                 powers[c] = 0
-                for cpu in self.cpus:
-                    util = cpu.util
-                    if c == cpu.index:
-                        util = self.task_init_util
+                #
+                # assign a large fake power to off cpu
+                # 
+                if self.cpus[c].off == True:
+                    powers[c] = 99999999
+                else:
+                    for cpu in self.cpus:
+                        util = cpu.util
+                        if c == cpu.index:
+                            util = self.task_init_util
 
-                    index, freq = cpu.pwr_tbl.get_freq(util, 0.8)
-                    ratio = (util / cpu.pwr_tbl.data[index]['cap'])
-                    expected_power = int(cpu.pwr_tbl.data[index]['power'] * ratio)
-                    # self.print('[%d] util: %d, init util: %d, cpu util: %d, cap: %d, ratio: %.2f' % (c, util, self.task_init_util, cpu.util, cpu.pwr_tbl.data[index]['cap'], ratio))
-                    # self.print('[%d] index: %d, freq: %d, expected power: %d' % (c, index, freq, expected_power))
-                    powers[c] += expected_power
+                        index, freq = cpu.pwr_tbl.get_freq(util, 0.8)
+                        ratio = (util / cpu.pwr_tbl.data[index]['cap'])
+                        expected_power = int(cpu.pwr_tbl.data[index]['power'] * ratio)
+                        # self.print('[%d] util: %d, init util: %d, cpu util: %d, cap: %d, ratio: %.2f' % (c, util, self.task_init_util, cpu.util, cpu.pwr_tbl.data[index]['cap'], ratio))
+                        # self.print('[%d] index: %d, freq: %d, expected power: %d' % (c, index, freq, expected_power))
+                        powers[c] += expected_power
 
             #
             # check all cpus are running?
