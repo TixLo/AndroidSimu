@@ -23,6 +23,7 @@ class Task(Log):
         self.rt_b_ts = 0
         self.rt_e_ts = -1
         self.rt_dur = 0
+        self.rt_cpu = -1
         self.rt_workload = -1 #workload = freq * execution time * IPC
         self.rt_util = 0
 
@@ -50,7 +51,7 @@ class Task(Log):
 
     def dump_rt(self):
         self.print('task name: %s, pid: %d, tgid: %d, cpu: %d, inject_ts: %.6f, b_ts: %.6f, e_ts: %.6f, dur: %.6f, wl: %d' %
-            (self.name, self.pid, self.tgid, self.cpu, self.rt_inject, self.rt_b_ts, self.rt_e_ts, self.rt_dur, self.rt_workload))
+            (self.name, self.pid, self.tgid, self.rt_cpu, self.rt_inject, self.rt_b_ts, self.rt_e_ts, self.rt_dur, self.rt_workload))
 
     def to_trace(self):
         traces = []
@@ -59,7 +60,7 @@ class Task(Log):
         # generate sched_wakeup trace
         #
         sched_wakeup = '<idle>-0     (-----) [%.3d] .... %.6f: sched_wakeup: comm=%s pid=%d prio=120 target_cpu=%.3d' \
-                % (self.cpu, self.rt_inject_ts, self.name, self.pid, self.cpu)
+                % (self.rt_cpu, self.rt_inject_ts, self.name, self.pid, self.rt_cpu)
         # self.print(sched_wakeup)
         traces.append({'ts': self.rt_inject_ts, 'trace': sched_wakeup})
 
@@ -68,7 +69,7 @@ class Task(Log):
         # generate sched_switch start
         #
         sched_switch_s = '<idle>-0     (-----) [%.3d] .... %.6f: sched_switch: prev_comm=swapper/%d prev_pid=0 prev_prio=120 prev_state=R ==> next_comm=%s next_pid=%d next_prio=120' \
-                % (self.cpu, self.rt_b_ts, self.cpu, self.name, self.pid)
+                % (self.rt_cpu, self.rt_b_ts, self.rt_cpu, self.name, self.pid)
         # self.print(sched_wakeup)
         traces.append({'ts': self.rt_b_ts, 'trace': sched_switch_s})
 
@@ -77,7 +78,7 @@ class Task(Log):
         # generate sched_switch end
         #
         sched_switch_e = '%s-%d     (%d) [%.3d] .... %.6f: sched_switch: prev_comm=%s prev_pid=%d prev_prio=120 prev_state=D ==> next_comm=swapper/%d next_pid=0 next_prio=120' \
-                % (self.name, self.pid, self.tgid, self.cpu, self.rt_e_ts, self.name, self.pid, self.cpu)
+                % (self.name, self.pid, self.tgid, self.rt_cpu, self.rt_e_ts, self.name, self.pid, self.rt_cpu)
         # self.print(sched_switch_e)
         traces.append({'ts': self.rt_e_ts, 'trace': sched_switch_e})
         
