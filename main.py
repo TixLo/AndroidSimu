@@ -135,7 +135,7 @@ def create_hw_configs():
 if __name__ == '__main__':
     configs = create_hw_configs()
 
-    task_generator = TaskGenerator(task_count=50, cpus=configs['sched']['cpus'])
+    task_generator = TaskGenerator(task_count=100, cpus=configs['sched']['cpus'])
     tasks_data = task_generator.get_tasks()
     # input()
 

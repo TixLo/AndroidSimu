@@ -107,8 +107,8 @@ class Console:
                 info += ', task: None, workload: -, consumed: -'
             info += ', Util: %s%d%s' % (self.YELLOW, c.util, self.RESET)
             info += ', freq: %s%d%s MHz' % (self.YELLOW, c.freq, self.RESET)
-            info += ', runnableQ: %s%d%s' % (self.YELLOW, len(c.runnable), self.RESET)
-            info += ', completed: %s%d%s' % (self.YELLOW, len(c.completed_tasks), self.RESET)
+            info += ', Q: %s%d%s' % (self.YELLOW, len(c.runnable), self.RESET)
+            info += ', Done: %s%d%s' % (self.YELLOW, len(c.completed_tasks), self.RESET)
 
             self.draw_text(info, self.WHITE)
             self.move_to_next_new_line()

@@ -79,6 +79,9 @@ class CPU(Basic):
             self.consumed_workload = delta_time * self.freq * 1000000 * self.ipc
         else:
             self.consumed_workload = delta_time * self.fixed_freq * 1000000 * self.ipc
+
+        # if self.consumed_workload == 0:
+        #     return 0, 0
         # print('delta_time: %.6f, self.freq: %d, self.ipc: %.2f, consumed_workload: %d' % (delta_time, self.freq, self.ipc, self.consumed_workload))
         # task.dump()
 
@@ -118,7 +121,7 @@ class CPU(Basic):
         if new_util > 0 and new_util == self.util:
             new_util -= 1
         # self.print('new_util: %d, old_util:%d' % (new_util, self.util))
-        self.util = new_util
+        self.util = min(new_util, self.pwr_tbl.get_max_cap())
 
         if self.fixed_freq == -1:
             # get CPU frequency in according to power_table

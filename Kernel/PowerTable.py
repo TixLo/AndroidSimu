@@ -17,6 +17,9 @@ class PowerTable(Basic):
             'power': power
         })
 
+    def get_max_cap(self):
+        return self.data[-1]['cap']
+
     def dump(self):
         self.print('dump power table: %s' % self.name)
         for i in range(len(self.data)):
