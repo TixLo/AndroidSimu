@@ -9,7 +9,7 @@ Here are two important json configuration.
 ```
     configs = {
         'android': {
-            'executor_console': True 
+            'executor_console': False 
         },
         'sched': {
             'cpus': [
@@ -17,15 +17,25 @@ Here are two important json configuration.
                 { 'max_freq': 2850, 'ipc': 1.2, 'cluster': 1},
                 { 'max_freq': 3200, 'ipc': 1.6, 'cluster': 2}
             ],
-            'pelt-n': 32,
-            'task_init_util': 128
+            'pelt-n': 8,
+            'cpu_dispatch_bypass': False,
+            'idle_prefer': False,
+            'task_init_util': 128,
+            'load_balance': True,
+            'cpu_off': [],
+            'cpu_fixed_freq': [-1, -1, -1]
         }
     }
 ```
   - android:executor_console, False: text mode, True: visualization mode
   - sched:cpus, CPU architecture definitation
   - sched:pelt-n, set the scheduler load tracking behavior, 32/16/8 are supported currently
+  - sched:cpu_dispatch_bypass, dispatched cpu = original cpu
+  - sched:idle_prefer, performance favor, dispatch any avaliable cpu
   - sched:task_init_util, initial capacity of a new task and the value will be used by EAS
+  - sched:load_balance, enable load balancing mechanism implemend by push migration methodology
+  - sched: cpu_off: which cpu can be turned off, e.g., [0, 2] --> turn off CPU0, CPU2
+  - sched: cpu_fixed_freq: fixed cpu frequency
 - Task config
 ```
 {
