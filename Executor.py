@@ -23,8 +23,8 @@ class Executor(Basic):
         self.console = None
         if enable_console == True:
             self.console = Console()
-        # else:
-        #     self.enable_debug()
+        else:
+            self.enable_debug()
 
     def set_sched(self, sched):
         self.sched = sched
@@ -82,6 +82,8 @@ class Executor(Basic):
         if self.console != None:
             self.console.finalized()
 
+        self.print('executor curr_time: %.6f s' % self.curr_time)
+
     def evt_loop(self):
         while True:
             data = yield self.evt.recv()
@@ -105,6 +107,8 @@ class Executor(Basic):
                 self.task_completed_callback(data.task)
             elif isinstance(data, CpuFreqEvent):
                 self.cpu_freq_change_callback(data.timestamp, data.freqs)
+            elif isinstance(data, PushMigrationEvent):
+                self.load_balance_push_migration_callback(data.timestamp, data.cpu)
 
             # update the console and this code should be the last in the while loop    
             if self.console != None:
@@ -120,7 +124,7 @@ class Executor(Basic):
         delta_time = data.timestamp - self.curr_time
         if delta_time == 0:
             return
-        self.print('Execotur got tick event, timestamp: %.6f s, delta: %.6f s' % (self.curr_time, delta_time))
+        # self.print('Execotur got tick event, timestamp: %.6f s, delta: %.6f s' % (self.curr_time, delta_time))
         
         #
         # load tasks between [self.curr_time, self.curr_time + delta_time]
@@ -147,32 +151,35 @@ class Executor(Basic):
         self.curr_time = data.timestamp
 
     def hw_vsync_callback(self, data):
-        self.print('Execotur got hw vsync event, timestamp: %.6f s' % (data.timestamp))
+        # self.print('Execotur got hw vsync event, timestamp: %.6f s' % (data.timestamp))
         if self.console != None:
             self.console.tick_evts['HW VSYNC'] = data.timestamp * 1000 # convert to ms
 
     def sw_vsync_callback(self, data):
-        self.print('Execotur got sw vsync event, timestamp: %.6f s' % (data.timestamp))
+        # self.print('Execotur got sw vsync event, timestamp: %.6f s' % (data.timestamp))
         if self.console != None:
             self.console.tick_evts['SW VSYNC'] = data.timestamp * 1000 # convert to ms
 
     def vsync_app_callback(self, data):
-        self.print('Execotur got vsync-app event, timestamp: %.6f s' % (data.timestamp))
+        # self.print('Execotur got vsync-app event, timestamp: %.6f s' % (data.timestamp))
         if self.console != None:
             self.console.tick_evts['vsync-app'] = data.timestamp * 1000 # convert to ms
 
     def vsync_sf_callback(self, data):
-        self.print('Execotur got vsync-sf event, timestamp: %.6f s' % (data.timestamp))
+        # self.print('Execotur got vsync-sf event, timestamp: %.6f s' % (data.timestamp))
         if self.console != None:
             self.console.tick_evts['vsync-sf'] = data.timestamp * 1000 # convert to ms
 
     def task_completed_callback(self, task):
-        self.print('tasl_completed_callback')
-        task.dump()
+        # self.print('tasl_completed_callback')
+        # task.dump()
         self.trace.inject(task)
 
     def cpu_freq_change_callback(self, timestamp, freqs):
         self.trace.inject_cpu_freq(timestamp, freqs)
+
+    def load_balance_push_migration_callback(self, timestamp, cpu):
+        self.sched.load_balance_push_migration(timestamp, cpu)
 
     def load_tasks(self, start_ts, duration):
         ready_tasks = []

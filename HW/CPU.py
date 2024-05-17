@@ -34,8 +34,8 @@ class CPU(Basic):
         self.enable_debug()
 
     def dump(self):
-        self.print('[%d]CPU%d, freq: %d MHz, max_freq: %d MHz, ipc: %.2f, util: %d, y: %.6f, off: %d' % 
-            (self.cluster, self.index, self.freq, self.max_freq, self.ipc, self.util, self.decay_y, self.off))
+        self.print('[%d]CPU%d, freq: %d MHz, max_freq: %d MHz, ipc: %.2f, util: %d, y: %.6f, off: %d, q: %d' % 
+            (self.cluster, self.index, self.freq, self.max_freq, self.ipc, self.util, self.decay_y, self.off, len(self.runnable)))
 
     def is_empty(self):
         if len(self.runnable) == 0 and self.task == None:
@@ -125,6 +125,14 @@ class CPU(Basic):
             index, freq = self.pwr_tbl.get_freq(self.util, 0.8)
             # self.print('new util: %d, req: %d' % (self.util, freq))
             self.cpufreq.set_freq(self.index, freq)
+
+            # load balancing mechanism: push migration
+            # if next freq > current freq, it means higher utilization
+            # send PushMigrationEvent to scheduler and trigger the load balancing mechanism if runnable > 0
+            if freq > self.freq and len(self.runnable) > 0:
+                # self.print('next freq: %d, curr freq: %d' % (freq, self.freq))
+                push_evt = PushMigrationEvent(curr_time, self)
+                self.evt.send(push_evt)
         elif self.fixed_freq_launch_event == False:
             self.cpufreq.set_freq(self.index, self.fixed_freq)
             self.fixed_freq_launch_event = True

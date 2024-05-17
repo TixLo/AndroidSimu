@@ -28,7 +28,7 @@ class TaskGenerator:
             task['ts'] = ts[cpu_index]
             if i > 0:
                 task['ts'] += random.uniform(0, 0.002)
-            task['dur'] = random.uniform(0.0001, 0.030)
+            task['dur'] = random.uniform(0.0001, 0.005)
 
             #instructions = 1000 MHz * 0.001ms * 1.2 IPC
             freq = self.cpus[task['cpu']]['max_freq']
@@ -37,9 +37,9 @@ class TaskGenerator:
             task['workload'] = int(freq * 1000000 * task['dur'] * ipc)
             multimap[ts[cpu_index]] = task
 
-            delta = random.uniform(0.010, 0.100)
+            delta = random.uniform(0.002, 0.010)
             ts[cpu_index] += delta + task['dur']
-            print('self.ts: %.6f, delta: %.6f, dur: %.6f' % (ts[cpu_index], delta, task['dur']))
+            print('\tself.ts[%d]: %.6f, delta: %.6f, dur: %.6f' % (cpu_index, ts[cpu_index], delta, task['dur']))
 
         # sorted_dict_task = dict(sorted(multimap.items()))
         unsorted_tasks = []

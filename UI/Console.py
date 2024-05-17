@@ -239,6 +239,6 @@ class Console:
 
         self.draw_paused()
 
-        self.get_key()
-        # time.sleep(0.1)
+        # self.get_key()
+        time.sleep(0.2)
 

@@ -21,7 +21,7 @@ class SchedPolicy(Basic):
             elif cpu.cluster == 2:
                 cpu.pwr_tbl = self.b_pwr_tbl
 
-        self.enable_debug()
+        # self.enable_debug()
 
     def create_eas_power_table(self):
         self.l_pwr_tbl = PowerTable(self.env, 'LCPU Power Table')
@@ -31,7 +31,7 @@ class SchedPolicy(Basic):
         self.l_pwr_tbl.append(1100, 220, 18000)
         self.l_pwr_tbl.append(1400, 270, 25000)
         self.l_pwr_tbl.append(1600, 310, 35000)
-        self.l_pwr_tbl.append(1900, 350, 48000)
+        self.l_pwr_tbl.append(1900, 350, 58000)
         self.l_pwr_tbl.dump()
 
         self.m_pwr_tbl = PowerTable(self.env, 'MCPU Power Table')
@@ -39,9 +39,9 @@ class SchedPolicy(Basic):
         self.m_pwr_tbl.append(1200, 300, 27000)
         self.m_pwr_tbl.append(1500, 380, 34000)
         self.m_pwr_tbl.append(1800, 460, 39000)
-        self.m_pwr_tbl.append(2100, 540, 51000)
-        self.m_pwr_tbl.append(2500, 620, 65000)
-        self.m_pwr_tbl.append(2850, 700, 82000)
+        self.m_pwr_tbl.append(2100, 540, 56000)
+        self.m_pwr_tbl.append(2500, 620, 70000)
+        self.m_pwr_tbl.append(2850, 700, 89000)
         self.m_pwr_tbl.dump()
 
         self.b_pwr_tbl = PowerTable(self.env, 'BCPU Power Table')
@@ -62,6 +62,7 @@ class SchedPolicy(Basic):
 
             for c in range(len(self.cpus)):
                 powers[c] = 0
+                self.print('---- try to put task to CPU:%d -----' % c)
                 #
                 # assign a large fake power to off cpu
                 # 
@@ -71,15 +72,17 @@ class SchedPolicy(Basic):
                     for cpu in self.cpus:
                         util = cpu.util
                         if c == cpu.index:
-                            util = self.task_init_util
+                            util += self.task_init_util
 
                         index, freq = cpu.pwr_tbl.get_freq(util, 0.8)
                         ratio = (util / cpu.pwr_tbl.data[index]['cap'])
                         expected_power = int(cpu.pwr_tbl.data[index]['power'] * ratio)
-                        # self.print('[%d] util: %d, init util: %d, cpu util: %d, cap: %d, ratio: %.2f' % (c, util, self.task_init_util, cpu.util, cpu.pwr_tbl.data[index]['cap'], ratio))
-                        # self.print('[%d] index: %d, freq: %d, expected power: %d' % (c, index, freq, expected_power))
+                        self.print('[%d] util: %d, init util: %d, cpu util: %d, cap: %d, ratio: %.2f' % (c, util, self.task_init_util, cpu.util, cpu.pwr_tbl.data[index]['cap'], ratio))
+                        self.print('[%d] index: %d, freq: %d, expected power: %d' % (c, index, freq, expected_power))
                         powers[c] += expected_power
 
+            for k, v in powers.items():
+                self.print('put cpu %d and power: %d' % (k, v))
             #
             # check all cpus are running?
             #
@@ -113,3 +116,25 @@ class SchedPolicy(Basic):
         # self.print('selected_cpu: %d, idle_prefer: %d, bypass: %d' % (selected_cpu, self.idle_prefer, self.cpu_dispatch_bypass))
         # input()
         return selected_cpu
+
+    def push_migration(self, curr_time, cpu):
+        if len(cpu.runnable) == 0:
+            return
+
+        # 1. get the next task on busy CPU
+        task = cpu.runnable[0]
+
+        # 2. find the most CPU power efficiency combinarion
+        selected_cpu = self.task_dispatch(task)
+        self.print('selected cpu: %d' % selected_cpu)
+
+        # 3. only handle the task changing the CPU case
+        if selected_cpu != cpu.index:
+            # inject task to another CPU
+            self.print('inject task to another CPU: %d' % selected_cpu)
+            self.cpus[selected_cpu].inject_task(curr_time, task)
+
+            # remove the task from original CPU
+            cpu.runnable.pop()
+        # input()
+

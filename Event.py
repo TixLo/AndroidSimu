@@ -32,5 +32,10 @@ class CpuFreqEvent:
         self.timestamp = timestamp
         self.freqs = freqs
 
+class PushMigrationEvent:
+    def __init__(self, timestamp, cpu):
+        self.timestamp = timestamp
+        self.cpu = cpu
+
 
         

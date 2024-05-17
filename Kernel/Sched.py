@@ -14,6 +14,7 @@ class Sched(Basic):
         self.task_init_util = cfg['task_init_util']
         self.idle_prefer = cfg['idle_prefer']
         self.cpu_dispatch_bypass = cfg['cpu_dispatch_bypass']
+        self.load_balance = cfg['load_balance']
 
         self.enable_debug()
 
@@ -63,4 +64,9 @@ class Sched(Basic):
     def decay(self, curr_time):
         for cpu in self.cpus:
             cpu.decay(curr_time)
+
+    def load_balance_push_migration(self, curr_time, cpu):
+        if self.load_balance == True:
+            self.policy.push_migration(curr_time, cpu)
+
 
